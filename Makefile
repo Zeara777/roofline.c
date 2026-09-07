@@ -37,13 +37,13 @@ ifdef ASAN
   LDFLAGS += -fsanitize=address,undefined
 endif
 
-LIB_SRC  := src/arena.c src/gguf.c src/ops.c
+LIB_SRC  := src/arena.c src/gguf.c src/ops.c src/dequant.c src/vit.c
 LIB_OBJ  := $(LIB_SRC:%.c=$(BUILD)/%.o)
 
 TOOL_SRC := tools/tc_inspect.c
 TOOLS    := $(BUILD)/tc-inspect
 
-TEST_SRC := tests/test_arena.c tests/test_gguf.c tests/test_ops.c
+TEST_SRC := tests/test_arena.c tests/test_gguf.c tests/test_ops.c tests/test_vit.c
 TESTS    := $(TEST_SRC:tests/%.c=$(BUILD)/%)
 
 .PHONY: all tools test clean disk summary

@@ -5,17 +5,22 @@
 void tc_ref_gemm(float *C, const float *A, const float *B,
                  int M, int N, int K, bool b_transposed)
 {
-    for (int m = 0; m < M; m++) {
-        for (int n = 0; n < N; n++) {
+    /* Dimensions arrive as int because that is what reads clearly at the call
+     * site, but every index is computed in size_t: M*N on a real model
+     * overflows a 32-bit int long before it overflows memory. */
+    const size_t Ms = (size_t)M, Ns = (size_t)N, Ks = (size_t)K;
+
+    for (size_t m = 0; m < Ms; m++) {
+        for (size_t n = 0; n < Ns; n++) {
             float acc = 0.0f;
             if (b_transposed) {
-                const float *brow = B + (size_t)n * K;      /* B is [N,K] */
-                for (int k = 0; k < K; k++) acc += A[(size_t)m * K + k] * brow[k];
+                const float *brow = B + n * Ks;             /* B is [N,K] */
+                for (size_t k = 0; k < Ks; k++) acc += A[m * Ks + k] * brow[k];
             } else {
-                for (int k = 0; k < K; k++)                 /* B is [K,N] */
-                    acc += A[(size_t)m * K + k] * B[(size_t)k * N + n];
+                for (size_t k = 0; k < Ks; k++)             /* B is [K,N] */
+                    acc += A[m * Ks + k] * B[k * Ns + n];
             }
-            C[(size_t)m * N + n] = acc;
+            C[m * Ns + n] = acc;
         }
     }
 }
@@ -25,16 +30,16 @@ void tc_ref_linear(float *y, const float *x, const float *W, const float *bias,
 {
     tc_ref_gemm(y, x, W, M, N, K, true);
     if (bias != NULL)
-        for (int m = 0; m < M; m++)
-            for (int n = 0; n < N; n++) y[(size_t)m * N + n] += bias[n];
+        for (size_t m = 0; m < (size_t)M; m++)
+            for (size_t n = 0; n < (size_t)N; n++) y[m * (size_t)N + n] += bias[n];
 }
 
 void tc_ref_layernorm(float *out, const float *x, const float *gamma,
                       const float *beta, int rows, int cols, float eps)
 {
-    for (int r = 0; r < rows; r++) {
-        const float *in = x + (size_t)r * cols;
-        float *o = out + (size_t)r * cols;
+    for (size_t r = 0; r < (size_t)rows; r++) {
+        const float *in = x + r * (size_t)cols;
+        float *o = out + r * (size_t)cols;
 
         /* Reductions here accumulate in double, unlike matmul. The two cases
          * are not the same problem:
@@ -89,9 +94,9 @@ void tc_ref_gelu_quick(float *out, const float *x, size_t n)
 
 void tc_ref_softmax_rows(float *out, const float *x, int rows, int cols)
 {
-    for (int r = 0; r < rows; r++) {
-        const float *in = x + (size_t)r * cols;
-        float *o = out + (size_t)r * cols;
+    for (size_t r = 0; r < (size_t)rows; r++) {
+        const float *in = x + r * (size_t)cols;
+        float *o = out + r * (size_t)cols;
 
         float mx = in[0];
         for (int c = 1; c < cols; c++) if (in[c] > mx) mx = in[c];
@@ -110,35 +115,36 @@ void tc_ref_mha(float *out, const float *q, const float *k, const float *v,
     const int D = n_head * head_dim;
     const float scale = 1.0f / sqrtf((float)head_dim);
 
-    for (int h = 0; h < n_head; h++) {
-        const int off = h * head_dim;
-        for (int t = 0; t < T; t++) {
-            const float *qh = q + (size_t)t * D + off;
+    const size_t Ds = (size_t)D, hd = (size_t)head_dim;
+    for (size_t h = 0; h < (size_t)n_head; h++) {
+        const size_t off = h * hd;
+        for (size_t t = 0; t < (size_t)T; t++) {
+            const float *qh = q + t * Ds + off;
 
             /* scores over all positions — no causal mask, this is an encoder */
             float mx = -INFINITY;
-            for (int s = 0; s < T; s++) {
-                const float *kh = k + (size_t)s * D + off;
+            for (size_t s = 0; s < (size_t)T; s++) {
+                const float *kh = k + s * Ds + off;
                 float acc = 0.0f;
-                for (int d = 0; d < head_dim; d++) acc += qh[d] * kh[d];
+                for (size_t d = 0; d < hd; d++) acc += qh[d] * kh[d];
                 acc *= scale;
                 scratch[s] = acc;
                 if (acc > mx) mx = acc;
             }
 
             double sum = 0.0;
-            for (int s = 0; s < T; s++) {
+            for (size_t s = 0; s < (size_t)T; s++) {
                 scratch[s] = expf(scratch[s] - mx);
                 sum += (double)scratch[s];
             }
             float inv = (float)(1.0 / sum);
 
-            float *o = out + (size_t)t * D + off;
-            for (int d = 0; d < head_dim; d++) o[d] = 0.0f;
-            for (int s = 0; s < T; s++) {
+            float *o = out + t * Ds + off;
+            for (size_t d = 0; d < hd; d++) o[d] = 0.0f;
+            for (size_t s = 0; s < (size_t)T; s++) {
                 const float w = scratch[s] * inv;
-                const float *vh = v + (size_t)s * D + off;
-                for (int d = 0; d < head_dim; d++) o[d] += w * vh[d];
+                const float *vh = v + s * Ds + off;
+                for (size_t d = 0; d < hd; d++) o[d] += w * vh[d];
             }
         }
     }

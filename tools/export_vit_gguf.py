@@ -16,7 +16,8 @@ Setup for the full mode:
     python3 -m venv .venv && .venv/bin/pip install numpy torch open_clip_torch
     .venv/bin/python tools/export_vit_gguf.py --model hf-hub:imageomics/bioclip-2
 
-⚠️ torch is a ~2-3 GB install and the BioCLIP-2 checkpoint is ~1.6 GB.
+torch + open_clip cost ~600 MB on macOS arm64 (measured); the BioCLIP-2
+checkpoint is ~1.6 GB.
 """
 import argparse
 import json
@@ -56,6 +57,54 @@ def map_name(k):
             return re.sub(pat, rep, k)
     return None
 
+
+def detect_activation(mlp):
+    """Which GELU does this checkpoint want? Probe it, do not assume.
+
+    open_clip_config.json does not say, and the two differ by ~2e-2 at x=-2 —
+    small enough to look like a kernel bug and large enough to change an
+    embedding. So run the checkpoint's own activation module on fixed inputs
+    and compare against both definitions. The answer goes in the GGUF, so the
+    C side reads it rather than inheriting this guess.
+    """
+    import math
+    import torch
+
+    act = None
+    for _, mod in mlp.named_children():
+        if "Linear" not in type(mod).__name__:
+            act = mod
+    if act is None:
+        sys.exit("ABORT: no activation module found in the MLP")
+
+    x = torch.tensor([-4.0, -2.0, -0.5, 0.0, 0.5, 2.0, 4.0])
+    with torch.no_grad():
+        got = act(x)
+    exact = 0.5 * x * (1 + torch.erf(x / math.sqrt(2)))
+    quick = x * torch.sigmoid(1.702 * x)
+    if torch.allclose(got, exact, atol=1e-6):
+        return "gelu"
+    if torch.allclose(got, quick, atol=1e-6):
+        return "gelu_quick"
+    sys.exit(f"ABORT: activation {type(act).__name__} matches neither GELU "
+             f"nor QuickGELU: {got.tolist()}")
+
+
+def detect_pooling(visual):
+    """CLS token, or mean over patches? Getting this wrong still produces a
+    plausible embedding, so it is recorded rather than assumed.
+
+    open_clip spells this `pool_type` ('tok'/'avg'/'none'); older forks used a
+    `global_average_pool` bool. Both are read, because a missing attribute
+    silently defaulting to 'cls' would be a guess wearing a check's clothes."""
+    if getattr(visual, "attn_pool", None) is not None:
+        return "attn"
+    pool_type = getattr(visual, "pool_type", None)
+    if pool_type is not None:
+        return {"tok": "cls", "avg": "mean", "none": "none"}[pool_type]
+    if getattr(visual, "global_average_pool", False):
+        return "mean"
+    sys.exit("ABORT: cannot determine pooling — no pool_type, no global_average_pool")
 
 def _ssl_ctx():
     """The python.org framework Python ships without root CAs wired into ssl.
@@ -148,6 +197,9 @@ def export(args, spec):
     w.add_u32(f"{ARCH}.context_length", spec["tokens"])
     w.add_u32(f"{ARCH}.projection_dim", spec["embed_dim"])
     w.add_f32(f"{ARCH}.layer_norm_epsilon", 1e-5)
+    # Detected off the checkpoint, never assumed — see detect_activation.
+    w.add_string(f"{ARCH}.activation", detect_activation(visual.transformer.resblocks[0].mlp))
+    w.add_string(f"{ARCH}.pooling", detect_pooling(visual))
     w.add_f32_array(f"{ARCH}.preprocess.mean", spec["pre"]["mean"])
     w.add_f32_array(f"{ARCH}.preprocess.std", spec["pre"]["std"])
     w.add_string(f"{ARCH}.preprocess.interpolation", spec["pre"]["interpolation"])

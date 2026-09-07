@@ -50,7 +50,7 @@ static void cmp(const char *what, const float *got, const float *want,
         }
     }
     tt_ran++;
-    if (worst_abs > atol && worst_rel > rtol) {
+    if (worst_abs > (double)atol && worst_rel > (double)rtol) {
         tt_fail++;
         fprintf(stderr, "  \033[31mFAIL\033[0m %-16s abs %.3g (at %zu) rel %.3g"
                         "  [atol %.g rtol %.g]\n",
@@ -85,7 +85,7 @@ int main(void)
         snprintf(k, sizeof k, "gemm %s", tags[i]);
         /* K=1024 accumulates ~1e-4 absolute in fp32; that is the kernel being
          * correct, not wrong, which is why both tolerances must be exceeded. */
-        cmp(k, out, c, (size_t)M * N, 2e-4f, 1e-5f);
+        cmp(k, out, c, (size_t)M * (size_t)N, 2e-4f, 1e-5f);
     }
 
     /* ---- linear (with bias, PyTorch weight layout) ---- */
@@ -93,7 +93,7 @@ int main(void)
         int M = U("linear.M"), N = U("linear.N"), K = U("linear.K");
         tc_ref_linear(out, T("linear.x", NULL), T("linear.W", NULL),
                       T("linear.b", NULL), M, N, K);
-        cmp("linear", out, T("linear.y", NULL), (size_t)M * N, 1e-5f, 1e-5f);
+        cmp("linear", out, T("linear.y", NULL), (size_t)M * (size_t)N, 1e-5f, 1e-5f);
     }
 
     /* ---- layernorm (one row offset by 1e4 — the one-pass variance trap) ---- */
@@ -102,7 +102,7 @@ int main(void)
         float eps = gguf_f32_or(&G, "ln.eps", 1e-5f);
         tc_ref_layernorm(out, T("ln.x", NULL), T("ln.gamma", NULL),
                          T("ln.beta", NULL), rows, cols, eps);
-        cmp("layernorm", out, T("ln.out", NULL), (size_t)rows * cols, 1e-4f, 1e-4f);
+        cmp("layernorm", out, T("ln.out", NULL), (size_t)rows * (size_t)cols, 1e-4f, 1e-4f);
     }
 
     /* ---- gelu, both flavours ---- */
@@ -129,10 +129,11 @@ int main(void)
     {
         int rows = U("softmax.rows"), cols = U("softmax.cols");
         tc_ref_softmax_rows(out, T("softmax.x", NULL), rows, cols);
-        cmp("softmax", out, T("softmax.out", NULL), (size_t)rows * cols, 1e-6f, 1e-5f);
+        cmp("softmax", out, T("softmax.out", NULL), (size_t)rows * (size_t)cols, 1e-6f, 1e-5f);
         for (int r = 0; r < rows; r++) {           /* each row must sum to 1 */
             double s = 0.0;
-            for (int c = 0; c < cols; c++) s += out[(size_t)r * cols + c];
+            for (int c = 0; c < cols; c++)
+                s += (double)out[(size_t)r * (size_t)cols + (size_t)c];
             CHECK(fabs(s - 1.0) < 1e-5);
         }
     }
@@ -143,7 +144,7 @@ int main(void)
         float *scratch = (float *)arena_alloc_or_die(&A, (size_t)Tn * sizeof(float), 64);
         tc_ref_mha(out, T("mha.q", NULL), T("mha.k", NULL), T("mha.v", NULL),
                    Tn, H, HD, scratch);
-        cmp("mha", out, T("mha.out", NULL), (size_t)Tn * H * HD, 1e-5f, 1e-5f);
+        cmp("mha", out, T("mha.out", NULL), (size_t)Tn * (size_t)H * (size_t)HD, 1e-5f, 1e-5f);
     }
 
     gguf_close(&G);
