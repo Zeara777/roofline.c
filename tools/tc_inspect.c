@@ -198,15 +198,28 @@ static void print_summary(const gguf_t *g)
                 (unsigned long long)(g->data_size - high), rst());
 
 
-    /* The bandwidth ceiling from the plan: decode reads every weight once per
-     * token, so this is the upper bound before a single kernel is written. */
+    /* The bandwidth ceiling. Same arithmetic in both cases — weights are read
+     * once per unit of work — but the unit differs, and so does what it means.
+     * For a causal LM the unit is a token and the ceiling is real: decode is
+     * bandwidth-bound and no kernel beats it. For an image encoder the unit is
+     * one image at batch 1, and batching amortizes the weight read away, which
+     * is exactly why an encoder is compute-bound in practice. */
     if (total_bytes > 0) {
         const double bw_gbs = 68.0;   /* M1 (base) LPDDR4X, spec figure */
         double ceiling = bw_gbs * 1e9 / (double)total_bytes;
-        printf("\n  %sdecode ceiling at %.0f GB/s: %.1f tok/s%s\n",
-               dim(), bw_gbs, ceiling, rst());
-        printf("  %s(weights only — KV cache traffic makes the real ceiling lower)%s\n",
-               dim(), rst());
+        gguf_str_t a;
+        bool encoder = gguf_get_str(g, "general.architecture", &a) &&
+                       (gguf_str_eq(a, "clip-vit") || gguf_str_eq(a, "clip-vit-fixtures"));
+        printf("\n  %sroofline at %.0f GB/s: ", dim(), bw_gbs);
+        if (encoder) {
+            printf("%.1f img/s at batch 1%s\n", ceiling, rst());
+            printf("  %s(batching amortizes the weight read — an encoder is "
+                   "compute-bound in practice)%s\n", dim(), rst());
+        } else {
+            printf("%.1f tok/s decode%s\n", ceiling, rst());
+            printf("  %s(weights only — KV cache traffic makes the real ceiling "
+                   "lower)%s\n", dim(), rst());
+        }
     }
 }
 

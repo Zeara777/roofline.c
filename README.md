@@ -97,9 +97,31 @@ naturally aligned, so values are copied out with `memcpy` rather than cast.
 On arm64 a cast happens to work; it is still undefined behavior, and UBSan
 flags it.
 
+## The image-encoder path
+
+`tools/export_vit_gguf.py` exports an open_clip ViT to GGUF plus reference
+activations. `--config-only` needs no torch and answers the architecture
+question straight from the hub:
+
+```
+$ .venv/bin/python tools/export_vit_gguf.py --config-only
+  layers 24 · width 1024 · heads 16 · ffn 4096 · patch 14 / image 224
+  tokens 16x16 + 1 CLS = 257 · projection dim 768 · parameters 303,966,208
+    fp16 607.9 MB   Q8_0 323.0 MB   Q4_K 171.0 MB
+```
+
+Fixtures are written as GGUF too, so the C tests read them with the loader that
+already exists rather than a second file format. `tools/gguf_writer.py` is a
+pure-Python mirror of `src/gguf.c` — writing with one and reading with the other
+round-trips the format through two independent implementations.
+
 ## Next
 
-- [ ] BPE tokenizer: merge ranks, byte fallback, `llama-bpe` pre-tokenizer regex
-- [ ] fp32 tensor ops: RMSNorm, RoPE, GQA attention, SwiGLU
-- [ ] KV cache, then sampling (greedy, temperature, top-p, min-p)
-- [ ] **Gate:** logit parity vs a Hugging Face reference, max |Δ| < 1e-4 in fp32
+- [ ] Tensor descriptor and op dispatch
+- [ ] Scalar fp32 reference kernels: matmul, softmax, layernorm, gelu
+- [ ] Golden-vector harness reading `*-fixtures.gguf`
+- [ ] ViT forward: patch embed → pos → 24 blocks → CLS pool → projection
+- [ ] **Gate:** embedding cosine ≥ 0.9999 vs the PyTorch reference
+- [ ] Prototype classifier + roster filter
+- [ ] **Result:** top-1/top-3 as a function of encoder weight precision
+- [ ] *Deferred:* BPE tokenizer and the causal-LM path
