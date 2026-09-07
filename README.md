@@ -31,6 +31,20 @@ make ASAN=1     # address + UB sanitizers (use for tests, never benchmarks)
 make disk       # just the disk guard
 ```
 
+### Session summaries
+
+Every session writes a summary to `~/.claude/session-summaries/CPT/YYYY-MM-DD-<slug>.md`
+— deliberately outside the repo, so one can never end up in a commit or a PR. A `Stop`
+hook checks the rule and reminds when a summary is owed; it stays quiet when today's file
+already exists, and quiet when the session produced no commits and no working-tree
+changes, since a read-only session has nothing to summarize.
+
+```sh
+make summary SLUG=vit-forward     # scaffold today's file
+scripts/session-summary.sh list   # what exists
+scripts/session-summary.sh path   # where they go
+```
+
 ### Disk
 
 This project pulls model checkpoints measured in gigabytes and writes GGUF

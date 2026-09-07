@@ -46,7 +46,7 @@ TOOLS    := $(BUILD)/tc-inspect
 TEST_SRC := tests/test_arena.c tests/test_gguf.c tests/test_ops.c
 TESTS    := $(TEST_SRC:tests/%.c=$(BUILD)/%)
 
-.PHONY: all tools test clean disk
+.PHONY: all tools test clean disk summary
 .SECONDARY:
 all: tools test
 
@@ -76,6 +76,11 @@ test: disk $(TESTS)
 	done; \
 	if [ $$fail -eq 0 ]; then printf '\033[32mall tests passed\033[0m\n'; \
 	else printf '\033[31mTESTS FAILED\033[0m\n'; exit 1; fi
+
+# Scaffold today's session summary. Summaries live OUTSIDE the repo on purpose
+# (see the global CLAUDE.md) so one can never end up in a commit or a PR.
+summary:
+	@scripts/session-summary.sh new $(or $(SLUG),$(error usage: make summary SLUG=<short-slug>))
 
 clean:
 	rm -rf $(BUILD)
