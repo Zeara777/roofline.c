@@ -9,6 +9,7 @@ size in bytes. It is both the optimization target and the signal to stop.
 
 Building a transformer inference engine from scratch in C, one layer at a time.
 Design and the accuracy discipline: [`ARCHITECTURE.md`](ARCHITECTURE.md).
+Research findings for the image-encoder path: [`docs/VIT_RESEARCH.md`](docs/VIT_RESEARCH.md).
 The staged build plan: [`docs/bare-metal-transformers.html`](docs/bare-metal-transformers.html).
 
 ```
