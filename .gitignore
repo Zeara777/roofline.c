@@ -2,6 +2,9 @@ build/
 *.o
 *.d
 *.gguf
+# ...but the golden vectors are the op gate and must travel with the repo.
+# Regenerating them on a different numpy build could shift the reference.
+!tests/fixtures/*.gguf
 *.bin
 .DS_Store
 compile_commands.json
