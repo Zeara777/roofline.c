@@ -1,0 +1,8 @@
+build/
+*.o
+*.d
+*.gguf
+*.bin
+.DS_Store
+compile_commands.json
+.cache/

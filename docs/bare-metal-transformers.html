@@ -1,0 +1,618 @@
+<title>Bare-Metal Transformers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root{
+  --ground:#F3F5F7;
+  --surface:#FFFFFF;
+  --surface-2:#EAEEF2;
+  --ink:#14181F;
+  --muted:#5C6675;
+  --faint:#8790A0;
+  --rule:#DBE0E6;
+  --rule-strong:#C3CBD5;
+  --copper:#A8501C;
+  --copper-soft:#F0E0D4;
+  --teal:#276B68;
+  --teal-soft:#DCEAE8;
+  --ok:#2F6B3C;
+  --warn:#8A6112;
+
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  --measure:68ch;
+  --wide:1080px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0F1216;
+    --surface:#161A21;
+    --surface-2:#1C222A;
+    --ink:#E3E7EC;
+    --muted:#929BA9;
+    --faint:#6C7684;
+    --rule:#252B34;
+    --rule-strong:#333B47;
+    --copper:#E08A4C;
+    --copper-soft:#2E2118;
+    --teal:#52A8A2;
+    --teal-soft:#14262A;
+    --ok:#6FB37C;
+    --warn:#C9A24A;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0F1216;
+  --surface:#161A21;
+  --surface-2:#1C222A;
+  --ink:#E3E7EC;
+  --muted:#929BA9;
+  --faint:#6C7684;
+  --rule:#252B34;
+  --rule-strong:#333B47;
+  --copper:#E08A4C;
+  --copper-soft:#2E2118;
+  --teal:#52A8A2;
+  --teal-soft:#14262A;
+  --ok:#6FB37C;
+  --warn:#C9A24A;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:17px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.page{max-width:var(--wide);margin:0 auto;padding:0 24px 96px}
+.col{max-width:var(--measure)}
+p{margin:0 0 1em}
+a{color:var(--copper);text-underline-offset:3px;text-decoration-thickness:1px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--copper);outline-offset:3px;border-radius:2px}
+
+/* ---------- masthead ---------- */
+.masthead{padding:64px 0 0;display:flex;flex-direction:column;gap:20px}
+.eyebrow{
+  font-family:var(--mono);font-size:11.5px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;
+}
+.eyebrow .dot{width:4px;height:4px;border-radius:50%;background:var(--copper)}
+h1{
+  font-family:var(--display);font-weight:700;font-size:clamp(40px,7vw,66px);
+  line-height:1.02;letter-spacing:-.025em;margin:0;text-wrap:balance;
+}
+.standfirst{font-size:20px;line-height:1.5;color:var(--muted);max-width:60ch;margin:0}
+.standfirst strong{color:var(--ink);font-weight:600}
+
+/* ---------- constraint strip ---------- */
+.rig{
+  margin-top:12px;display:grid;gap:1px;background:var(--rule);
+  border:1px solid var(--rule);border-radius:3px;overflow:hidden;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+}
+.rig div{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.rig dt{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--faint);
+}
+.rig dd{margin:0;font-family:var(--mono);font-size:14px;font-weight:500;color:var(--ink)}
+.rig dd.no{color:var(--copper)}
+
+/* ---------- generic section ---------- */
+section{margin-top:72px}
+h2{
+  font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 6px;
+}
+.lede{
+  font-family:var(--display);font-weight:600;font-size:clamp(24px,3.4vw,30px);
+  line-height:1.22;letter-spacing:-.017em;margin:0 0 20px;max-width:26ch;text-wrap:balance;
+}
+
+/* ---------- layer stack ---------- */
+.stack{display:flex;flex-direction:column-reverse;gap:4px;margin:28px 0 8px}
+.layer{
+  display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:16px;
+  background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--rule-strong);
+  padding:13px 16px;border-radius:2px;
+}
+.layer.built{border-left-color:var(--copper)}
+.layer .lnum{
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.06em;
+  color:var(--copper);
+}
+.layer .lname{font-family:var(--display);font-weight:600;font-size:15.5px;letter-spacing:-.01em}
+.layer .lname span{display:block;font-family:var(--body);font-weight:400;font-size:14px;color:var(--muted);letter-spacing:0;line-height:1.4}
+.layer .lmeta{font-family:var(--mono);font-size:11px;color:var(--faint);text-align:right;white-space:nowrap}
+
+/* ---------- stages ---------- */
+.stage{
+  border-top:1px solid var(--rule-strong);padding-top:22px;margin-top:44px;
+  display:grid;gap:22px;grid-template-columns:1fr;
+}
+.stage-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px 16px}
+.snum{
+  font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.1em;
+  color:var(--copper);padding-top:4px;
+}
+.stitle{
+  font-family:var(--display);font-weight:700;font-size:clamp(22px,3vw,28px);
+  letter-spacing:-.02em;margin:0;flex:1 1 320px;line-height:1.15;
+}
+.dur{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 8px;border-radius:2px;background:var(--surface-2);color:var(--muted);
+  border:1px solid var(--rule);
+}
+.chip.c1{background:var(--copper-soft);color:var(--copper);border-color:transparent}
+.chip.c2{background:var(--teal-soft);color:var(--teal);border-color:transparent}
+.stage-body{display:grid;gap:26px;grid-template-columns:1fr}
+@media(min-width:860px){.stage-body{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:38px}}
+.what p{max-width:60ch}
+.blist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.blist li{padding-left:18px;position:relative;font-size:16px;line-height:1.5}
+.blist li::before{
+  content:"";position:absolute;left:0;top:.62em;width:7px;height:1px;background:var(--copper);
+}
+.blist code,p code,td code,.note code{
+  font-family:var(--mono);font-size:.86em;background:var(--surface-2);
+  padding:1px 4px;border-radius:2px;color:var(--ink);
+}
+
+/* gates panel */
+.gates{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:4px 16px 14px}
+.gates h3{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);margin:14px 0 10px;font-weight:500;
+}
+.gate{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-top:1px solid var(--rule)}
+.gate:first-of-type{border-top:none;padding-top:0}
+.gate .gk{font-family:var(--display);font-weight:600;font-size:13.5px;letter-spacing:-.005em}
+.gate .gv{font-family:var(--mono);font-size:13px;color:var(--copper);font-variant-numeric:tabular-nums}
+.gate .gn{font-size:14px;color:var(--muted);line-height:1.45}
+.ships{
+  margin-top:14px;padding-top:12px;border-top:1px solid var(--rule-strong);
+  font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--ink);
+}
+.ships b{
+  display:block;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);font-weight:500;margin-bottom:5px;
+}
+
+/* ---------- satellites ---------- */
+.sats{display:grid;gap:16px;grid-template-columns:1fr;margin-top:24px}
+@media(min-width:800px){.sats{grid-template-columns:1fr 1fr}}
+.sat{
+  background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:20px 20px 22px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.sat .sk{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);
+}
+.sat h3{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.018em;margin:0;line-height:1.2}
+.sat p{margin:0;font-size:16px;line-height:1.5;color:var(--muted)}
+.sat p.dark{color:var(--ink)}
+.sat .unlock{
+  margin-top:auto;padding-top:12px;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:11.5px;color:var(--faint);
+}
+
+/* ---------- gantt ---------- */
+.gantt{margin-top:24px;overflow-x:auto}
+.gantt-inner{min-width:660px}
+.gweeks{
+  display:grid;grid-template-columns:190px repeat(16,1fr);gap:2px;
+  font-family:var(--mono);font-size:10px;color:var(--faint);margin-bottom:6px;
+}
+.gweeks span{text-align:center}
+.gweeks span:first-child{text-align:left;letter-spacing:.12em;text-transform:uppercase}
+.grow{
+  display:grid;grid-template-columns:190px repeat(16,1fr);gap:2px;
+  align-items:center;margin-bottom:3px;
+}
+.glabel{
+  font-family:var(--mono);font-size:11.5px;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:10px;
+}
+.glabel i{color:var(--copper);font-style:normal;font-weight:700}
+.gcell{height:20px;background:var(--surface);border-radius:1px}
+.gbar{height:20px;background:var(--copper);border-radius:1px}
+.gbar.alt{background:var(--teal)}
+.gbar.ghost{background:var(--copper);opacity:.28}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto;margin-top:20px;border:1px solid var(--rule);border-radius:3px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:520px}
+th,td{
+  text-align:left;padding:10px 16px;border-bottom:1px solid var(--rule);
+  font-size:15px;vertical-align:top;
+}
+th{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint);font-weight:500;
+}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13.5px;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td.fit{color:var(--ok);font-family:var(--mono);font-size:12.5px}
+td.tight{color:var(--warn);font-family:var(--mono);font-size:12.5px}
+td.no{color:var(--copper);font-family:var(--mono);font-size:12.5px}
+
+/* ---------- roofline callout ---------- */
+.roof{
+  margin-top:26px;background:var(--surface);border:1px solid var(--rule);
+  border-left:3px solid var(--teal);border-radius:3px;padding:20px 22px;
+}
+.roof h3{font-family:var(--display);font-weight:700;font-size:18px;margin:0 0 8px;letter-spacing:-.015em}
+.roof p{max-width:62ch;margin:0 0 12px}
+.roof .calc{
+  font-family:var(--mono);font-size:13px;line-height:1.9;color:var(--ink);
+  background:var(--surface-2);border-radius:2px;padding:12px 14px;overflow-x:auto;white-space:pre;
+}
+
+/* ---------- note ---------- */
+.note{
+  margin-top:26px;border:1px dashed var(--rule-strong);border-radius:3px;
+  padding:18px 20px;background:transparent;
+}
+.note h3{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--faint);margin:0 0 10px;font-weight:500;
+}
+.note p{margin:0 0 .7em;font-size:15.5px;color:var(--muted);max-width:64ch}
+.note p:last-child{margin-bottom:0}
+.note b{color:var(--ink);font-weight:600}
+
+/* ---------- reading ---------- */
+.reading{list-style:none;margin:20px 0 0;padding:0;display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.reading li{background:var(--surface);padding:12px 16px;display:grid;gap:2px 16px;grid-template-columns:1fr}
+@media(min-width:720px){.reading li{grid-template-columns:minmax(0,300px) 1fr;align-items:baseline}}
+.reading .rt{font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:-.01em}
+.reading .rd{font-size:14.5px;color:var(--muted);line-height:1.45}
+
+footer{
+  margin-top:80px;padding-top:20px;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:11.5px;color:var(--faint);
+  display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>Build plan</span><span class="dot"></span>
+      <span>September 2026</span><span class="dot"></span>
+      <span>C99 · NEON · AVX2 · Metal</span>
+    </div>
+    <h1>Bare-Metal Transformers</h1>
+    <p class="standfirst">C lost transformer <em>research</em> and won transformer <em>deployment</em>. This is a four-month plan to build the deployment side yourself &mdash; <strong>one engine, five stages, two satellites</strong>, each stage a finished thing on its own.</p>
+
+    <dl class="rig">
+      <div><dt>Primary</dt><dd>Apple M1 · 8 core</dd></div>
+      <div><dt>Memory</dt><dd>8 GB unified</dd></div>
+      <div><dt>Bandwidth</dt><dd>≈68 GB/s</dd></div>
+      <div><dt>Second box</dt><dd>Linux x86-64</dd></div>
+      <div><dt>GPU path</dt><dd>Metal only</dd></div>
+      <div><dt>CUDA</dt><dd class="no">unavailable</dd></div>
+    </dl>
+  </header>
+
+  <section>
+    <h2>The shape</h2>
+    <p class="lede">Not eight projects. One engine that grows a layer at a time.</p>
+    <div class="col">
+      <p>Scattered projects read as scattered. A single engine that gains a capability every three weeks reads as engineering — and it lets each stage be judged on its own terms, because each one ends with a number or a proof rather than a commit log.</p>
+      <p>The spine below is the engine. Stage 05 is a companion binary that shares its allocator and tensor code but runs backward instead of forward. The two satellites aren't scheduled work — they're things that become <em>possible</em> once stage 02 exists, and both are nearly free by then.</p>
+    </div>
+
+    <div class="stack">
+      <div class="layer built"><span class="lnum">01</span><span class="lname">Model + tokenizer + fp32 forward pass<span>GGUF mmap, BPE, RMSNorm, RoPE, GQA, SwiGLU, KV cache</span></span><span class="lmeta">correctness</span></div>
+      <div class="layer built"><span class="lnum">02</span><span class="lname">Block quantization + SIMD kernels<span>Q8_0, Q4_0, Q4_K · NEON on M1, AVX2/VNNI on x86</span></span><span class="lmeta">speed</span></div>
+      <div class="layer built"><span class="lnum">03</span><span class="lname">Metal backend<span>Fused dequant-matvec, online-softmax attention, RoPE, RMSNorm</span></span><span class="lmeta">M1 GPU</span></div>
+      <div class="layer built"><span class="lnum">04</span><span class="lname">Serving layer<span>Paged KV cache, continuous batching, prefix cache, SSE streaming</span></span><span class="lmeta">throughput</span></div>
+    </div>
+    <p style="font-family:var(--mono);font-size:11px;color:var(--faint);margin:10px 0 0">Read bottom-up. Each layer only depends on the ones beneath it.</p>
+  </section>
+
+  <section>
+    <h2>The spine</h2>
+    <p class="lede">Five stages, in dependency order.</p>
+    <div class="col">
+      <p style="color:var(--muted)">Every figure in the <em>gates</em> panels is a <strong>target to be measured</strong>, not a measurement. A stage isn't done when the code runs — it's done when the gate is met and the number is written down, including when the number disappoints.</p>
+    </div>
+
+    <!-- 01 -->
+    <article class="stage">
+      <div class="stage-head">
+        <span class="snum">01</span>
+        <h3 class="stitle">A correct forward pass, in 2,000 lines of C99</h3>
+        <span class="dur">2 weeks</span>
+      </div>
+      <div class="chips">
+        <span class="chip c1">Understanding</span><span class="chip">Foundation for everything</span>
+      </div>
+      <div class="stage-body">
+        <div class="what">
+          <p>Pure C99, zero dependencies, one binary. A modern Llama-family architecture — not the 2023 one — so you meet grouped-query attention, RoPE, RMSNorm, SwiGLU and per-head QK normalization the way current models actually use them.</p>
+          <ul class="blist">
+            <li>Real <code>GGUF</code> parsing over <code>mmap</code>, zero-copy. Not a toy <code>.bin</code> dump — this is what lets you load anything off Hugging Face for the rest of the project.</li>
+            <li>An arena allocator and a tensor descriptor struct. Every later stage inherits these, so get the memory model right once.</li>
+            <li>A real BPE tokenizer with merge ranks and byte fallback. Most from-scratch attempts skip this and hardcode a vocab; it's the part that makes your engine usable on arbitrary text.</li>
+            <li>KV cache, then sampling: greedy, temperature, top-p, min-p.</li>
+          </ul>
+        </div>
+        <div class="gates">
+          <h3>Gates</h3>
+          <div class="gate"><span class="gk">Logit parity</span><span class="gv">max |Δ| &lt; 1e-4</span><span class="gn">Against a Hugging Face reference on a fixed prompt, fp32, first 32 tokens.</span></div>
+          <div class="gate"><span class="gk">Perplexity</span><span class="gv">matches reference ±0.01</span><span class="gn">On a held-out WikiText chunk. Proves the whole pipeline, not just one layer.</span></div>
+          <div class="gate"><span class="gk">Baseline speed</span><span class="gv">record tok/s, don't optimize</span><span class="gn">Scalar fp32 will be painfully slow. That's the point — it's stage 02's denominator.</span></div>
+          <div class="ships"><b>Ships as</b>tc -m qwen3-0.6b-f32.gguf \<br>&nbsp;&nbsp; -p "..." --top-p 0.9</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 02 -->
+    <article class="stage">
+      <div class="stage-head">
+        <span class="snum">02</span>
+        <h3 class="stitle">Quantization and hand-written SIMD, on two ISAs</h3>
+        <span class="dur">3 weeks</span>
+      </div>
+      <div class="chips">
+        <span class="chip c1">Portfolio</span><span class="chip c2">Research</span><span class="chip">The highest-leverage stage</span>
+      </div>
+      <div class="stage-body">
+        <div class="what">
+          <p>This is the stage that gets you hired, and the one your second machine makes uniquely yours: the same kernel, written twice, benchmarked honestly against each other. Very few people can produce that table.</p>
+          <p>Implement the block formats for real — <code>Q8_0</code> (32 weights + one fp16 scale = 34 B), <code>Q4_0</code> (32 weights + scale = 18 B), then the K-quant superblock: <code>Q4_K</code> packs 256 weights as eight sub-blocks with 6-bit scales and mins plus an fp16 super-scale, landing at 4.5 bits/weight.</p>
+          <ul class="blist">
+            <li>Write the <em>quantizer</em> too, fp32 GGUF → Q4_K GGUF, including an importance-matrix calibration pass so the quality claim is defensible.</li>
+            <li>Treat prefill and decode as two different problems, because they are: decode is a memory-bound <strong>GEMV</strong>, prefill is a compute-bound tiled <strong>GEMM</strong>. Conflating them is the most common mistake.</li>
+            <li>Dequantize inside the inner loop. Never materialize fp16 weights to memory — the compression ratio <em>is</em> the speedup on a bandwidth-bound decode.</li>
+            <li>NEON on the M1: <code>vdotq_s32</code>, nibble unpack via <code>vandq_u8</code>/<code>vshrq_n_u8</code>. AVX2 on x86: <code>_mm256_maddubs_epi16</code> with a <code>_mm256_shuffle_epi8</code> nibble LUT; AVX-512 VNNI: <code>_mm512_dpbusd_epi32</code>.</li>
+            <li>pthreads with a real barrier. Measure scaling across the M1's 4 performance + 4 efficiency cores — they are not interchangeable, and your speedup curve will show it.</li>
+          </ul>
+        </div>
+        <div class="gates">
+          <h3>Gates</h3>
+          <div class="gate"><span class="gk">Decode speedup</span><span class="gv">≥ 5× over stage 01</span><span class="gn">Single-thread, same model, Q4_K vs scalar fp32. 10× is achievable.</span></div>
+          <div class="gate"><span class="gk">Quality retained</span><span class="gv">PPL delta &lt; 2%</span><span class="gn">Q4_K vs fp32 on the same held-out text. Without this the speedup means nothing.</span></div>
+          <div class="gate"><span class="gk">Honest comparison</span><span class="gv">vs llama.cpp, same box</span><span class="gn">Publish the gap even when you lose. A truthful loss is worth more than an unverifiable win.</span></div>
+          <div class="gate"><span class="gk">Cross-ISA table</span><span class="gv">M1 · AVX2 · VNNI</span><span class="gn">Same kernel, three targets, one table. This becomes the satellite study.</span></div>
+          <div class="ships"><b>Ships as</b>tc-quant in.gguf out.gguf --type q4_k \<br>&nbsp;&nbsp; --imatrix calib.dat<br>tc --bench --threads 4</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 03 -->
+    <article class="stage">
+      <div class="stage-head">
+        <span class="snum">03</span>
+        <h3 class="stitle">A Metal backend for the M1 GPU</h3>
+        <span class="dur">3 weeks</span>
+      </div>
+      <div class="chips">
+        <span class="chip c1">Portfolio</span><span class="chip">Platform depth</span>
+      </div>
+      <div class="stage-body">
+        <div class="what">
+          <p>On Apple silicon the GPU, not the AMX coprocessor, is where inference belongs — published measurements put the M1 Max GPU around 4.7× the AMX blocks on the same workload. Driving Metal from C is a genuinely uncommon skill.</p>
+          <ul class="blist">
+            <li>A thin Objective-C bridge (or <code>metal-cpp</code>) exposing a C API: buffer, pipeline, dispatch. Keep the C side ignorant of Metal types.</li>
+            <li>Kernels: fused dequant + matvec, an online-softmax fused attention, RMSNorm, RoPE, SwiGLU. Same rule as stage 02 — dequantize in-register, never to global memory.</li>
+            <li>Introduce a backend vtable so CPU and Metal are swappable at runtime. You'll rediscover from the inside why ggml is structured the way it is.</li>
+            <li>Unified memory is the M1's cheat code: no host↔device copy. Exploit it, and say so in the write-up.</li>
+          </ul>
+        </div>
+        <div class="gates">
+          <h3>Gates</h3>
+          <div class="gate"><span class="gk">Numerical agreement</span><span class="gv">Metal vs CPU, |Δ| &lt; 1e-3</span><span class="gn">Per-op, not just end-to-end. fp16 accumulation will bite you here.</span></div>
+          <div class="gate"><span class="gk">Prefill speedup</span><span class="gv">≥ 3× over tuned CPU</span><span class="gn">Prefill is compute-bound, so this is where the GPU should dominate.</span></div>
+          <div class="gate"><span class="gk">Backend switch</span><span class="gv">--backend cpu|metal</span><span class="gn">One flag, identical output text under greedy sampling.</span></div>
+          <div class="ships"><b>Ships as</b>tc --backend metal \<br>&nbsp;&nbsp; -m qwen3-1.7b-q4_k.gguf</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 04 -->
+    <article class="stage">
+      <div class="stage-head">
+        <span class="snum">04</span>
+        <h3 class="stitle">The serving layer that makes it a product</h3>
+        <span class="dur">3 weeks</span>
+      </div>
+      <div class="chips">
+        <span class="chip c1">Ship it</span><span class="chip">Systems design</span>
+      </div>
+      <div class="stage-body">
+        <div class="what">
+          <p>Stages 01–03 make a fast program. This one makes a server, and it's where the OS-flavoured ideas live — the same virtual-memory trick vLLM made famous, implemented by you, in C, where it's most natural.</p>
+          <ul class="blist">
+            <li><strong>Paged KV cache</strong>: fixed-size physical blocks plus a per-sequence block table, so fragmentation stops capping concurrency.</li>
+            <li><strong>Continuous batching</strong>: schedule at iteration granularity, not request granularity. Finished sequences leave the batch mid-flight and new ones join.</li>
+            <li><strong>Prefix cache</strong>: a radix tree over token prefixes so a shared system prompt is prefilled once for every request that follows.</li>
+            <li>An OpenAI-compatible <code>/v1/chat/completions</code> with SSE streaming, so every existing client works against your engine with a changed base URL. That single decision is what turns a demo into something people run.</li>
+          </ul>
+        </div>
+        <div class="gates">
+          <h3>Gates</h3>
+          <div class="gate"><span class="gk">Batching win</span><span class="gv">continuous &gt; static</span><span class="gn">Plot throughput vs. concurrency 1→16 for both. The crossover is the result.</span></div>
+          <div class="gate"><span class="gk">Prefix cache</span><span class="gv">TTFT drop on shared prompt</span><span class="gn">Measure time-to-first-token with and without, same system prompt.</span></div>
+          <div class="gate"><span class="gk">Drop-in</span><span class="gv">works unmodified with an existing client</span><span class="gn">Point a real chat client at localhost. If it needs patching, you're not done.</span></div>
+          <div class="gate"><span class="gk">Soak</span><span class="gv">1h, zero leaks</span><span class="gn">Under load, with leaks checked. C gives you no safety net here.</span></div>
+          <div class="ships"><b>Ships as</b>tc-serve --port 8080 \<br>&nbsp;&nbsp; -m smollm3-3b-q4_k.gguf \<br>&nbsp;&nbsp; --backend metal --kv-blocks 512</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 05 -->
+    <article class="stage">
+      <div class="stage-head">
+        <span class="snum">05</span>
+        <h3 class="stitle">Backward passes, derived by hand</h3>
+        <span class="dur">3 weeks</span>
+      </div>
+      <div class="chips">
+        <span class="chip c1">Understanding</span><span class="chip">Companion binary</span>
+      </div>
+      <div class="stage-body">
+        <div class="what">
+          <p>The deepest stage, and the one PyTorch has been hiding from you. There is no autodiff — you derive and write every backward yourself, then prove each one numerically. Nobody who finishes this is ever again vague about what a transformer does.</p>
+          <ul class="blist">
+            <li>Backward for matmul, RMSNorm, RoPE, softmax-attention, SwiGLU, cross-entropy. Derive on paper first; the code is the easy half.</li>
+            <li>AdamW with decoupled weight decay, cosine schedule with warmup, global-norm gradient clipping.</li>
+            <li>Train on TinyStories to a real loss curve and coherent samples. A small model that genuinely learns beats a large one that half-runs.</li>
+            <li>Shares stage 01's arena and tensor code — that reuse is itself the argument that the foundation was built right.</li>
+          </ul>
+        </div>
+        <div class="gates">
+          <h3>Gates</h3>
+          <div class="gate"><span class="gk">Finite-difference check</span><span class="gv">rel. error &lt; 1e-5, every op</span><span class="gn">Non-negotiable. One unchecked backward silently poisons the whole run.</span></div>
+          <div class="gate"><span class="gk">Autograd agreement</span><span class="gv">gradients match PyTorch</span><span class="gn">Same init, same batch, one step. Belt and braces over the FD check.</span></div>
+          <div class="gate"><span class="gk">It learns</span><span class="gv">loss curve + coherent samples</span><span class="gn">On TinyStories. Publish the curve, not a claim about the curve.</span></div>
+          <div class="ships"><b>Ships as</b>tc-train --data tinystories.bin \<br>&nbsp;&nbsp; --layers 6 --dim 384 --steps 20000<br>tc-train --gradcheck</div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section>
+    <h2>Satellites</h2>
+    <p class="lede">Not scheduled. Unlocked.</p>
+    <div class="col"><p style="color:var(--muted)">Both of these become cheap the moment stage 02 exists, and neither is worth attempting before it. They're deliberately unnumbered — nothing depends on them, and they don't block the spine.</p></div>
+
+    <div class="sats">
+      <div class="sat">
+        <span class="sk">Open source</span>
+        <h3>A kernel patch to llama.cpp / ggml</h3>
+        <p class="dark">After stage 02 you are, genuinely, qualified to touch this code — the same quantized GEMM/GEMV work on ARM64 is active upstream right now, alongside Metal ops and the newer Hexagon backend.</p>
+        <p>Aim for a real kernel improvement over a docs fix. A merged commit in the repository that every local LLM tool depends on is a credential no side project substitutes for.</p>
+        <span class="unlock">unlocks after 02 · ~1 focused week</span>
+      </div>
+      <div class="sat">
+        <span class="sk">Write-up</span>
+        <h3>Quantized GEMV across three ISAs</h3>
+        <p class="dark">Same 4-bit kernel on NEON, AVX2, and AVX-512 VNNI, with a roofline analysis of where each ISA's ceiling actually sits and why. Your two machines make this an apples-to-apples comparison almost nobody is positioned to run.</p>
+        <p>Falls out of stage 02's benchmark table nearly for free. A careful blog post here travels further than a mediocre preprint.</p>
+        <span class="unlock">unlocks after 02 · ~2 weeks to write</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sequence</h2>
+    <p class="lede">Sixteen weeks, if it stays serious part-time.</p>
+    <div class="gantt">
+      <div class="gantt-inner">
+        <div class="gweeks">
+          <span>Week</span>
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span>
+          <span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span>
+        </div>
+        <div class="grow"><span class="glabel"><i>01</i> Forward pass</span>
+          <span class="gbar"></span><span class="gbar"></span>
+          <span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span>
+        </div>
+        <div class="grow"><span class="glabel"><i>02</i> Quant + SIMD</span>
+          <span class="gcell"></span><span class="gcell"></span>
+          <span class="gbar"></span><span class="gbar"></span><span class="gbar"></span>
+          <span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span>
+        </div>
+        <div class="grow"><span class="glabel"><i>03</i> Metal backend</span>
+          <span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span>
+          <span class="gbar"></span><span class="gbar"></span><span class="gbar"></span>
+          <span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span>
+        </div>
+        <div class="grow"><span class="glabel"><i>05</i> Training in C</span>
+          <span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span>
+          <span class="gbar"></span><span class="gbar"></span><span class="gbar"></span>
+          <span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span>
+        </div>
+        <div class="grow"><span class="glabel"><i>04</i> Serving layer</span>
+          <span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span>
+          <span class="gbar"></span><span class="gbar"></span><span class="gbar"></span>
+          <span class="gcell"></span><span class="gcell"></span>
+        </div>
+        <div class="grow"><span class="glabel">— ggml patch</span>
+          <span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span>
+          <span class="gbar alt"></span>
+          <span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span>
+        </div>
+        <div class="grow"><span class="glabel">— Cross-ISA write-up</span>
+          <span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span><span class="gcell"></span>
+          <span class="gbar alt"></span><span class="gbar alt"></span>
+        </div>
+      </div>
+    </div>
+    <p style="font-family:var(--mono);font-size:11px;color:var(--faint);margin:14px 0 0">Copper = engine spine · Teal = satellite. Stage 05 sits between 03 and 04 on purpose: it's a mental reset between two performance-heavy stages.</p>
+  </section>
+
+  <section>
+    <h2>The 8 GB constraint</h2>
+    <p class="lede">Memory picks your models, and bandwidth picks your ceiling.</p>
+    <div class="col"><p>Q4_K lands near 0.6 bytes per parameter once the K-quant mix and metadata are counted. Add the KV cache and the OS, and 8 GB of unified memory draws a hard line through the model list.</p></div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Model</th><th>Params</th><th>fp16</th><th>Q4_K ≈</th><th>On this M1</th></tr></thead>
+        <tbody>
+          <tr><td>Qwen3-0.6B</td><td class="num">0.6 B</td><td class="num">1.2 GB</td><td class="num">0.4 GB</td><td class="fit">ideal for 01 &amp; 02</td></tr>
+          <tr><td>Qwen3-1.7B</td><td class="num">1.7 B</td><td class="num">3.4 GB</td><td class="num">1.0 GB</td><td class="fit">ideal for 03</td></tr>
+          <tr><td>SmolLM3-3B</td><td class="num">3 B</td><td class="num">6.0 GB</td><td class="num">1.9 GB</td><td class="fit">ideal for 04</td></tr>
+          <tr><td>Qwen3-4B</td><td class="num">4 B</td><td class="num">8.0 GB</td><td class="num">2.5 GB</td><td class="fit">fits at Q4</td></tr>
+          <tr><td>Llama-3.1-8B</td><td class="num">8 B</td><td class="num">16 GB</td><td class="num">4.9 GB</td><td class="tight">tight — small KV only</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="roof">
+      <h3>Why decode speed is arithmetic, not luck</h3>
+      <p>Autoregressive decode reads every weight once per token, so it is bandwidth-bound. That gives you a ceiling before you write a line of kernel — and a way to know when to stop optimizing.</p>
+      <div class="calc">M1 memory bandwidth        ≈ 68 GB/s
+
+Qwen3-0.6B  @ Q4_K  0.4 GB  →  ceiling ≈ 170 tok/s
+SmolLM3-3B  @ Q4_K  1.9 GB  →  ceiling ≈  36 tok/s
+Llama-3.1-8B @ Q4_K 4.9 GB  →  ceiling ≈  14 tok/s</div>
+      <p style="margin:12px 0 0">Hit 60–70% of the ceiling and the remaining work is in prefill, not decode. This single calculation is also the honest answer to "why is quantization worth it" — at Q4 you move a quarter of the bytes, so you get roughly four times the tokens.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Deliberately excluded</h2>
+    <div class="note">
+      <h3>Two projects that would otherwise be here</h3>
+      <p><b>CUDA kernel work / llm.c-style multi-GPU training.</b> Cut because you have no NVIDIA GPU and didn't ask to rent one. If that changes, it slots in after stage 02 — the quantization and tiling intuitions transfer directly, and only the memory hierarchy is new.</p>
+      <p><b>Transformers on a microcontroller.</b> Cut because you don't have a board. It's the most memorable portfolio piece in the whole space and the cheapest to unblock — an ESP32-S3 is roughly the price of lunch. Say the word and it becomes a sixth stage: static arenas, no <code>malloc</code>, int8 end to end.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Prior art worth reading first</h2>
+    <ul class="reading">
+      <li><span class="rt"><a href="https://github.com/karpathy/llama2.c">karpathy/llama2.c</a></span><span class="rd">700 self-contained lines. Read <code>run.c</code> end to end before starting stage 01 — then close it and write your own.</span></li>
+      <li><span class="rt"><a href="https://github.com/ggml-org/llama.cpp">ggml-org/llama.cpp</a></span><span class="rd">The reference implementation of everything here. Your benchmark opponent in 02 and your contribution target after it.</span></li>
+      <li><span class="rt"><a href="https://github.com/karpathy/llm.c">karpathy/llm.c</a></span><span class="rd">GPT-2 training in raw C/CUDA, ~1,000 lines for the CPU reference. The model for stage 05.</span></li>
+      <li><span class="rt"><a href="https://justine.lol/matmul/">Tunney — LLaMA goes faster on CPUs</a></span><span class="rd">How much is left on the table in a naive matmul. Read before writing a single intrinsic.</span></li>
+      <li><span class="rt"><a href="https://arxiv.org/pdf/2501.00032">Optimized kernels for LLM inference on Arm CPUs</a></span><span class="rd">4-bit kernels reaching 3–3.2× prefill and ~2× decode. Your stage 02 target, from people who did it properly.</span></li>
+      <li><span class="rt"><a href="https://arxiv.org/html/2606.25426">Exceeding Accelerate at LLM prefill GEMM on M1 AMX</a></span><span class="rd">Apple-silicon-specific, and the source of the GPU-vs-AMX numbers behind stage 03.</span></li>
+      <li><span class="rt"><a href="https://vllm.ai/blog/2025-09-05-anatomy-of-vllm">Inside vLLM</a></span><span class="rd">PagedAttention, continuous batching and prefix caching described by their implementers. Stage 04's blueprint.</span></li>
+      <li><span class="rt"><a href="https://mbrenndoerfer.com/writing/gguf-format-quantized-llm-storage-inference">GGUF: storage and inference</a></span><span class="rd">The format spec in prose. You'll need this on day one of stage 01.</span></li>
+    </ul>
+  </section>
+
+  <footer>
+    <span>Bare-Metal Transformers · build plan</span>
+    <span>Targets are targets until measured</span>
+  </footer>
+</div>
