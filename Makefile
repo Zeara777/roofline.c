@@ -51,7 +51,7 @@ TOOLS    := $(BUILD)/tc-inspect
 TEST_SRC := tests/test_arena.c tests/test_gguf.c tests/test_ops.c tests/test_vit.c
 TESTS    := $(TEST_SRC:tests/%.c=$(BUILD)/%)
 
-.PHONY: all tools test clean disk summary
+.PHONY: all tools test clean disk summary scan scan-history audit audit-status guards
 .SECONDARY:
 all: tools test
 
@@ -81,6 +81,32 @@ test: disk $(TESTS)
 	done; \
 	if [ $$fail -eq 0 ]; then printf '\033[32mall tests passed\033[0m\n'; \
 	else printf '\033[31mTESTS FAILED\033[0m\n'; exit 1; fi
+
+# --- security guards ---------------------------------------------------------
+# The commit-time gate is git's pre-commit hook, not a make target: it has to
+# fire for commits made outside this Makefile too. These targets are the manual
+# half — the scan you run deliberately, and the audit that needs the network.
+
+# Secret scan of the tracked tree. The staged equivalent runs on every commit.
+scan:
+	@scripts/secret-scan.sh tree
+
+# Whole history. Slow, and worth doing once per repo rather than per session.
+scan-history:
+	@scripts/secret-scan.sh history
+
+# Dependency advisories across every repo in scripts/guarded-repos.txt.
+# Needs the network. Records the result so the SessionStart hook can stay quiet.
+audit:
+	@scripts/dep-audit.sh run
+
+audit-status:
+	@scripts/dep-audit.sh status
+
+# Install the pre-commit secret hook into every guarded repo. Idempotent, and
+# it refuses to overwrite a pre-commit hook it did not write.
+guards:
+	@scripts/install-guards.sh
 
 # Scaffold today's session summary. Summaries live OUTSIDE the repo on purpose
 # (see the global CLAUDE.md) so one can never end up in a commit or a PR.

@@ -1,0 +1,38 @@
+# Shared gitleaks config for the repos on this machine.
+#
+# Used when the target repo has no .gitleaks.toml of its own. It extends the
+# default rule set rather than replacing it — the point is to skip paths that
+# cannot hold a hand-written credential, not to weaken detection.
+#
+# Why this file has to exist: `gitleaks dir` walks everything, gitignored or
+# not. In CPT that is 2.6 GB of .gguf model weights and a 763 MB .venv; in the
+# React Native repos it is node_modules. A full-tree scan without this ran for
+# minutes and had to be killed, and a scan too slow to finish is a scan that
+# stops being run.
+#
+# NOTE: this only affects `tree`/`history` scans. The pre-commit path is
+# `gitleaks git --staged`, which sees only the staged diff and is already fast.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Build output, virtualenvs, dependency trees and model weights"
+paths = [
+  '''(^|/)\.venv/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)build/''',
+  '''(^|/)Pods/''',
+  '''(^|/)\.git/''',
+  '''(^|/)dist/''',
+  '''\.gguf$''',
+  '''\.(png|jpg|jpeg|gif|webp|heic|mp4|mov|pdf|zip|tar|gz|bin|safetensors|pt|pth|onnx)$''',
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)yarn\.lock$''',
+  # Suppression and config files quote what they suppress; scanning them makes
+  # every entry re-trigger its own rule.
+  '''(^|/)\.gitleaksignore$''',
+  '''(^|/)\.gitleaks\.toml$''',
+  '''(^|/)scripts/gitleaks\.toml$''',
+  '''(^|/)scripts/secret-scan\.sh$''',
+]

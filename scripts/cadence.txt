@@ -1,0 +1,15 @@
+# Recurring security tasks. One per line:  id | days | what it is
+#
+# This is Tier 3 from the plan: the work that has no trigger of its own and so
+# never happens. A dependency advisory announces itself eventually; a quarterly
+# read of the vulnerability-discovery literature never does.
+#
+# Anything with its own automation is deliberately NOT here. The dependency
+# audit tracks its own 30-day staleness in dep-audit.sh, and duplicating it
+# would mean two clocks disagreeing about the same task.
+
+vuln-research    | 90  | Read the quarter's published work on AI-assisted vulnerability discovery; file it in ~/research/
+ioc-baseline     | 90  | Re-check the preserved samples in ~/secGuard/ against current IOC feeds; fold new indicators into the daily check baseline
+history-scan     | 180 | Full-history secret scan of every guarded repo: make scan-history (per repo)
+attribution      | 180 | B6 — submit the preserved SHA-256s to VirusTotal / Malpedia
+pin-review       |  90 | Re-verify tools/model-pins.json against the upstream revision; confirm requirements.txt pins still resolve

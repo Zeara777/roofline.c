@@ -11,6 +11,7 @@ Building a transformer inference engine from scratch in C, one layer at a time.
 Design and the accuracy discipline: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 Research findings for the image-encoder path: [`docs/VIT_RESEARCH.md`](docs/VIT_RESEARCH.md).
 The staged build plan: [`docs/bare-metal-transformers.html`](docs/bare-metal-transformers.html).
+Commit-time and cadence security guards: [`docs/SECURITY_GUARDS.md`](docs/SECURITY_GUARDS.md).
 
 ```
 01  fp32 forward pass — GGUF loader, BPE tokenizer, RMSNorm/RoPE/GQA/SwiGLU   ← in progress

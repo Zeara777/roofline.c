@@ -1,0 +1,13 @@
+# Repos the dependency audit and secret scan cover, one absolute path per line.
+#
+# Explicit rather than discovered. A guard that sweeps the filesystem for repos
+# silently changes its own scope when a directory appears or is renamed, and the
+# day it stops covering something is the day nobody notices.
+#
+# Adding a repo here only affects `dep-audit.sh`. The commit-time secret hook is
+# per-repo and must be installed into each one: scripts/install-guards.sh
+
+/Users/rafaelzea/CPT
+/Users/rafaelzea/divegomobile
+/Users/rafaelzea/mapMarkers
+/Users/rafaelzea/warDrobe

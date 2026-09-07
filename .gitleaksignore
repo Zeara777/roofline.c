@@ -1,0 +1,24 @@
+# Findings gitleaks reports that are not secrets, by fingerprint.
+#
+# Suppress the individual finding, never the rule. Disabling `generic-api-key`
+# repo-wide to silence one line in a README would also disable it for the line
+# that matters, and nothing would ever say so.
+#
+# A fingerprint is file:rule:line, so editing the file shifts it and the finding
+# reappears. That is the safe direction to fail in — a stale suppression stops
+# suppressing rather than quietly covering new code.
+#
+# Do not quote the matched text in these comments. Doing so re-triggers the same
+# rule on this file, which is how the first version of it flagged itself.
+
+# README.md roadmap table: generic-api-key matched ordinary prose listing the
+# stage-01 components. No credential on that line.
+#
+# The line number moves whenever anything is inserted above it — adding the
+# SECURITY_GUARDS.md link shifted it from 16 to 17 and the finding reappeared,
+# which is the behaviour this file is supposed to have. Re-pin, don't disable.
+README.md:generic-api-key:17
+
+# Same README.md prose, seen again by the full-history scan at its older line 7.
+# History fingerprints are commit-scoped, so this entry covers that one blob.
+c22d3627cde3b966b8ce84dfa1e14b6874d95a23:README.md:generic-api-key:7
