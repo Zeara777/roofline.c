@@ -1,0 +1,26 @@
+{
+  "_comment": [
+    "Supply-chain pins for every checkpoint this repo downloads.",
+    "",
+    "WHY: create_model_and_transforms() fetches ~1.6 GB from a public registry and",
+    "loads it. Unpinned, the integrity story is 'HTTPS, and trust the registry' --",
+    "the same trust model that put a trojan on this machine in March 2026 via a",
+    "poisoned VS Code extension. A pin turns 'the upstream changed' from something",
+    "you never notice into a loud stop.",
+    "",
+    "HOW TO ADD A MODEL: run the exporter with --allow-unpinned. It downloads,",
+    "prints the revision and per-file sha256, and refuses to proceed. Paste the",
+    "block it prints here, then re-run without the flag.",
+    "",
+    "sha256 values are of the file contents. HuggingFace names LFS blobs by their",
+    "own sha256, so a cached blob's filename can be checked against these directly."
+  ],
+  "hf-hub:imageomics/bioclip-2": {
+    "revision": "2957b322090f9cb17ae72c71981c7218a28d81e0",
+    "pinned_on": "2026-09-07",
+    "files": {
+      "open_clip_config.json": "1bf947e96e943fe50efd5c3e26c37f843a2fa3c358967719a68c8a6d17ce68c8",
+      "open_clip_model.safetensors": "b7b2bf6fbc95799e42630e394cf95803892ab447c1a8ab629dbc82fbeaf7dfef"
+    }
+  }
+}

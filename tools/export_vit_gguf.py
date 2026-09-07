@@ -20,6 +20,7 @@ torch + open_clip cost ~600 MB on macOS arm64 (measured); the BioCLIP-2
 checkpoint is ~1.6 GB.
 """
 import argparse
+import hashlib
 import json
 import re
 import ssl
@@ -116,6 +117,82 @@ def _ssl_ctx():
         return ssl.create_default_context()
 
 
+PINS_PATH = Path(__file__).resolve().parent / "model-pins.json"
+
+
+def _sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def fetch_pinned(model, allow_unpinned):
+    """Download the checkpoint at a pinned revision and verify it before torch
+    ever opens it.
+
+    This exists because the alternative is the trust model that failed on this
+    machine in March 2026: a package pulled from a public registry over HTTPS
+    and executed on the strength of the registry's word. HTTPS proves you talked
+    to huggingface.co. It does not prove the repo holds what it held last week.
+
+    Returns the resolved revision. Aborts on any mismatch — a checkpoint whose
+    bytes changed is not a smaller problem than one that failed to download.
+    """
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.errors import EntryNotFoundError
+
+    repo = model.split("hf-hub:", 1)[-1]
+    pins = json.loads(PINS_PATH.read_text()) if PINS_PATH.exists() else {}
+    pin = pins.get(model)
+
+    if pin is None and not allow_unpinned:
+        sys.exit(f"ABORT: no pin for '{model}' in {PINS_PATH.name}.\n"
+                 f"  Re-run with --allow-unpinned to fetch it and print a pin block.")
+
+    revision = pin["revision"] if pin else None
+    want = pin["files"] if pin else {}
+    # open_clip asks for these two by name; keep the list in sync if that changes.
+    names = list(want) or ["open_clip_config.json", "open_clip_model.safetensors"]
+
+    got, resolved = {}, revision
+    for name in names:
+        try:
+            local = hf_hub_download(repo, name, revision=revision)
+        except EntryNotFoundError:
+            if name in want:
+                sys.exit(f"ABORT: pinned file '{name}' is not in {repo}@{revision}")
+            continue
+        got[name] = _sha256(local)
+        # The cache lays snapshots out as .../snapshots/<commit>/<name>; that
+        # commit is the revision actually served, which is what we want to
+        # report when the caller passed None.
+        parts = Path(local).resolve().parts
+        if resolved is None and "snapshots" in parts:
+            resolved = parts[parts.index("snapshots") + 1]
+
+    if pin is None:
+        print("\n--- no pin on file. Add this block to tools/model-pins.json ---")
+        print(json.dumps({model: {"revision": resolved,
+                                  "pinned_on": "TODAY",
+                                  "files": got}}, indent=2))
+        sys.exit("\nABORT: refusing to export an unpinned checkpoint. "
+                 "Review the block above, add it, and re-run.")
+
+    bad = [(n, want[n], got.get(n)) for n in want if got.get(n) != want[n]]
+    if bad:
+        for n, w, g in bad:
+            print(f"  {n}\n    expected {w}\n    got      {g or '<missing>'}",
+                  file=sys.stderr)
+        sys.exit("ABORT: checkpoint does not match its pin. Do NOT export this. "
+                 "Either upstream changed (review it, then update the pin "
+                 "deliberately) or the download was tampered with.")
+
+    print(f"pin ok: {repo}@{revision[:12]}  "
+          f"{len(want)} file(s) sha256-verified")
+    return revision
+
 def fetch_config(repo, cached=None):
     """Read open_clip_config.json from a local path if given, else the hub."""
     if cached:
@@ -178,6 +255,9 @@ def export(args, spec):
     import numpy as np
     import torch
     import open_clip
+
+    # Verify before torch touches the file, not after.
+    fetch_pinned(args.model, args.allow_unpinned)
 
     print(f"\nloading {args.model} ...")
     model, _, preprocess = open_clip.create_model_and_transforms(args.model)
@@ -262,6 +342,9 @@ def main():
                     help="print the architecture without loading torch")
     ap.add_argument("--config-file",
                     help="read open_clip_config.json locally instead of the hub")
+    ap.add_argument("--allow-unpinned", action="store_true",
+                    help="fetch a checkpoint with no pin and print a pin block "
+                         "to add to model-pins.json (still refuses to export)")
     args = ap.parse_args()
 
     repo = args.model.split("hf-hub:", 1)[-1]
