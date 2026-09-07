@@ -149,3 +149,22 @@ round-trips the format through two independent implementations.
 - [ ] Prototype classifier + roster filter
 - [ ] **Result:** top-1/top-3 as a function of encoder weight precision
 - [ ] *Deferred:* BPE tokenizer and the causal-LM path
+
+## Licence and attribution
+
+`roofline.c` is MIT — see [LICENSE](LICENSE).
+
+The engine vendors nothing. `src/gguf.c` is an independent implementation
+written against the GGUF specification; no ggml source is copied in.
+
+Model weights are a separate matter, and [NOTICE.md](NOTICE.md) covers them.
+Short version: **BioCLIP 2 is MIT**, so commercial use and redistribution of
+quantized derivatives are fine as long as the notice travels with them — which
+is why `tools/export_vit_gguf.py` writes `general.license`,
+`general.license.link` and `general.source.revision` into every `.gguf` it
+produces. A model file gets copied away from the repository that made it, so
+the attribution has to live inside the file.
+
+The licence is recorded in `tools/model-pins.json` alongside the SHA-256 pins,
+so the one review that establishes *which bytes* a model is also establishes
+*what you may do with them*.

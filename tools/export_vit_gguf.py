@@ -190,8 +190,8 @@ def fetch_pinned(model, allow_unpinned):
                  "deliberately) or the download was tampered with.")
 
     print(f"pin ok: {repo}@{revision[:12]}  "
-          f"{len(want)} file(s) sha256-verified")
-    return revision
+          f"{len(want)} file(s) sha256-verified  license {pin.get('license', '?')}")
+    return pin
 
 def fetch_config(repo, cached=None):
     """Read open_clip_config.json from a local path if given, else the hub."""
@@ -257,7 +257,7 @@ def export(args, spec):
     import open_clip
 
     # Verify before torch touches the file, not after.
-    fetch_pinned(args.model, args.allow_unpinned)
+    pin = fetch_pinned(args.model, args.allow_unpinned)
 
     print(f"\nloading {args.model} ...")
     model, _, preprocess = open_clip.create_model_and_transforms(args.model)
@@ -268,6 +268,14 @@ def export(args, spec):
     w = GGUFWriter(args.out)
     w.add_string("general.architecture", ARCH)
     w.add_string("general.name", args.model)
+    # Attribution travels INSIDE the artifact. A .gguf gets copied away from
+    # the repo that made it; a licence in a README does not follow it.
+    if pin.get("license"):
+        w.add_string("general.license", pin["license"])
+    if pin.get("license_link"):
+        w.add_string("general.license.link", pin["license_link"])
+    w.add_string("general.source.url", pin.get("license_link", args.model))
+    w.add_string("general.source.revision", pin["revision"])
     w.add_u32(f"{ARCH}.block_count", spec["layers"])
     w.add_u32(f"{ARCH}.embedding_length", spec["width"])
     w.add_u32(f"{ARCH}.attention.head_count", spec["heads"])

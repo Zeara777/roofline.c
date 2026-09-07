@@ -13,7 +13,9 @@
     "block it prints here, then re-run without the flag.",
     "",
     "sha256 values are of the file contents. HuggingFace names LFS blobs by their",
-    "own sha256, so a cached blob's filename can be checked against these directly."
+    "own sha256, so a cached blob's filename can be checked against these directly.",
+    "",
+    "LICENSE: recorded here so the review that pins a hash also settles what the weights are licensed under. The exporter writes it into general.license of every .gguf it produces, because a model file gets copied around on its own and the attribution has to travel inside it."
   ],
   "hf-hub:imageomics/bioclip-2": {
     "revision": "2957b322090f9cb17ae72c71981c7218a28d81e0",
@@ -21,6 +23,8 @@
     "files": {
       "open_clip_config.json": "1bf947e96e943fe50efd5c3e26c37f843a2fa3c358967719a68c8a6d17ce68c8",
       "open_clip_model.safetensors": "b7b2bf6fbc95799e42630e394cf95803892ab447c1a8ab629dbc82fbeaf7dfef"
-    }
+    },
+    "license": "mit",
+    "license_link": "https://huggingface.co/imageomics/bioclip-2"
   }
 }

@@ -2,7 +2,12 @@
 # Stage 01: arena, GGUF loader, tokenizer, fp32 forward pass.
 
 CC      ?= cc
-BUILD   ?= build
+
+# Sanitizer and STRICT builds get their own object trees. Sharing one meant
+# `make ASAN=1 test` followed by `make tools` linked ASAN objects without the
+# runtime and failed with a wall of undefined __asan_* symbols — a confusing
+# error for a mundane cause.
+BUILD   ?= build$(if $(ASAN),-asan)$(if $(STRICT),-strict)
 
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
