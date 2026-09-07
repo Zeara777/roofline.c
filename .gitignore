@@ -10,3 +10,8 @@ build/
 compile_commands.json
 .cache/
 .venv/
+
+# Personal study material. divegomobile keeps its equivalent in
+# .git/info/exclude; this one is in .gitignore instead because roofline.c is
+# public and cloned to more than one machine — the rule should travel.
+StdyDocs/
