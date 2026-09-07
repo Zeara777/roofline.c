@@ -1,4 +1,6 @@
-# tc — a transformer inference engine in C
+# transformer.c
+
+A transformer inference engine written from scratch in C.
 
 Building a transformer inference engine from scratch in C, one layer at a time.
 The full plan lives in [`docs/bare-metal-transformers.html`](docs/bare-metal-transformers.html).
@@ -23,6 +25,10 @@ make ASAN=1     # address + UB sanitizers (use for tests, never benchmarks)
 
 C11, no dependencies beyond libc. Clean under `-Wall -Wextra -Wpedantic`, under
 `STRICT=1`, and under ASAN+UBSan.
+
+Binaries are prefixed `tc-` (`tc-inspect`, later `tc-quant`, `tc-serve`).
+Deliberately never a bare `tc` — that is iproute2's traffic-control binary on
+Linux, and stage 02 targets an x86 Linux box.
 
 ## What works now
 
