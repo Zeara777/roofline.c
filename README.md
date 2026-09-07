@@ -8,7 +8,8 @@ before a single kernel is written — on this M1, ~68 GB/s divided by the model'
 size in bytes. It is both the optimization target and the signal to stop.
 
 Building a transformer inference engine from scratch in C, one layer at a time.
-The full plan lives in [`docs/bare-metal-transformers.html`](docs/bare-metal-transformers.html).
+Design and the accuracy discipline: [`ARCHITECTURE.md`](ARCHITECTURE.md).
+The staged build plan: [`docs/bare-metal-transformers.html`](docs/bare-metal-transformers.html).
 
 ```
 01  fp32 forward pass — GGUF loader, BPE tokenizer, RMSNorm/RoPE/GQA/SwiGLU   ← in progress
