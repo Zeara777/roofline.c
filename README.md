@@ -23,12 +23,22 @@ The staged build plan: [`docs/bare-metal-transformers.html`](docs/bare-metal-tra
 ## Build
 
 ```sh
-make            # build tools and run tests
+make            # build tools and run tests (disk-checked first)
 make tools      # just the binaries
 make test       # just the tests
 make STRICT=1   # add -Wconversion -Wsign-conversion -Wdouble-promotion
 make ASAN=1     # address + UB sanitizers (use for tests, never benchmarks)
+make disk       # just the disk guard
 ```
+
+### Disk
+
+This project pulls model checkpoints measured in gigabytes and writes GGUF
+exports beside them. Running out of disk mid-export leaves a truncated file that
+still parses far enough to look plausible, so `scripts/check-disk.sh` runs
+before every `make test` and, via a `SessionStart` hook in
+`.claude/settings.json`, at the start of every session. Thresholds are
+`ROOFLINE_DISK_FAIL_GIB` (default 5) and `ROOFLINE_DISK_WARN_GIB` (default 15).
 
 C11, no dependencies beyond libc. Clean under `-Wall -Wextra -Wpedantic`, under
 `STRICT=1`, and under ASAN+UBSan.

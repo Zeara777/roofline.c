@@ -37,16 +37,16 @@ ifdef ASAN
   LDFLAGS += -fsanitize=address,undefined
 endif
 
-LIB_SRC  := src/arena.c src/gguf.c
+LIB_SRC  := src/arena.c src/gguf.c src/ops.c
 LIB_OBJ  := $(LIB_SRC:%.c=$(BUILD)/%.o)
 
 TOOL_SRC := tools/tc_inspect.c
 TOOLS    := $(BUILD)/tc-inspect
 
-TEST_SRC := tests/test_arena.c tests/test_gguf.c
+TEST_SRC := tests/test_arena.c tests/test_gguf.c tests/test_ops.c
 TESTS    := $(TEST_SRC:tests/%.c=$(BUILD)/%)
 
-.PHONY: all tools test clean
+.PHONY: all tools test clean disk
 .SECONDARY:
 all: tools test
 
@@ -64,7 +64,12 @@ $(BUILD)/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-test: $(TESTS)
+# Disk is checked before tests because a test run can write fixtures and
+# exports, and a truncated GGUF is worse than a failed write.
+disk:
+	@scripts/check-disk.sh
+
+test: disk $(TESTS)
 	@fail=0; for t in $(TESTS); do \
 	  printf '\033[2m>>\033[0m %s\n' "$$t"; \
 	  ./$$t || fail=1; \
