@@ -82,6 +82,17 @@ An audit that could not run is recorded as **FAILED, never as clean**. Reporting
 "0 vulnerabilities" for a scan that never happened is the one output worse than
 no audit, because it is indistinguishable from good news.
 
+### Evidence that this matters
+
+YC's internal agent harness gates database writes behind a human reviewing a
+proposed plan. In production, per their own presenters: *"we've started just
+kind of rubber stamping these"* — compared explicitly to how carefully people
+read early coding-agent tool calls versus how they read them now. A control that
+fires on everything stops being a control, and it degrades silently, because a
+rubber stamp and a real review produce the same log line.
+
+That is the whole design brief for the guards here: fire rarely, and mean it.
+
 `ack` exists for the same reason the daily security check has `--accept`.
 Standing transitive advisories in a build toolchain do not clear until upstream
 bumps. Acknowledging records the exact counts; **if they change, the guard
