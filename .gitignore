@@ -15,3 +15,7 @@ compile_commands.json
 # .git/info/exclude; this one is in .gitignore instead because roofline.c is
 # public and cloned to more than one machine — the rule should travel.
 StdyDocs/
+
+# Symlink to ~/research — the cross-project plan lives outside this public repo
+# but must be reachable from where the work happens.
+research
